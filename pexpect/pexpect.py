@@ -130,7 +130,7 @@ class spawn:
         self.maxread = 1 # Maximum to read at a time
         ### IMPLEMENT THIS FEATURE!!!
         # anything before maxsearchsize point is preserved, but not searched.
-        self.maxsearchsize = 1000
+        self.maxsearchsize = None
         
         # If command is an int type then it must represent an open file descriptor.
         if type (command) == type(0):
@@ -671,11 +671,12 @@ class spawn:
                     index = index + 1
                     if str_target is EOF or str_target is TIMEOUT: 
                         continue # The Exception patterns are handled differently.
-                    if(self.maxsearchsize != None):
-                        searchbuffer = incoming[-self.maxsearchsize:]
+                    if(self.maxsearchsize != None and
+                       self.maxsearchsize < len(incoming)):
+                        pos = len(incoming) - self.maxsearchsize
+                        match_index = incoming.find(str_target,pos)
                     else:
-                        searchbuffer = incoming
-                    match_index = searchbuffer.find (str_target)
+                        match_index = searchbuffer.find (str_target)
                     if match_index >= 0:
                         self.before = incoming [ : match_index]
                         self.after = incoming [match_index : ]
@@ -737,11 +738,12 @@ class spawn:
                     index = index + 1
                     if cre is EOF or cre is TIMEOUT: 
                         continue # The patterns for PexpectExceptions are handled differently.
-                    if(self.maxsearchsize != None):
-                        searchbuffer = incoming[-self.maxsearchsize:]
+                    if(self.maxsearchsize != None and
+                       self.maxsearchsize < len(incoming)):
+                        pos = len(incoming) - self.maxsearchsize
+                        match = cre.search(incoming,pos)
                     else:
-                        searchbuffer = incoming
-                        match = cre.search(searchbuffer)
+                        match = cre.search(incoming)
                     if match is not None:
                         self.before = incoming[ : match.start()]
                         self.after = incoming[match.start() : ]
