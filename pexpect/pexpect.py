@@ -695,6 +695,33 @@ class spawn:
             self.match = None
             self.buffer = ''
             raise
+
+    def expect_lookahead(self,pattern, timeout = -1):
+        """
+        This function works exactly like the expect() function,
+        taking the same arguments, returning the same results,
+        and causing the same side effects except for one thing.
+        This function leaves all the data on the buffer.  It does
+        not strip off everything up to the end of the match.
+        This is useful in situations where you have multiple possible
+        sequences that you may have to interact with, for which you
+        have pexpect proceedures, but you can't know which one applies
+        until you look to see which one is starting.  The problem with
+        expect is that once you've looked to see which one is starting,
+        you have no way to use your existing proceedures, because expect
+        strips off of the buffer the very data your proceedures need to
+        get them going.
+        """
+
+        #Do a normal expect process
+        index = self.expect(pattern,timeout)
+        #Put back the part of the buffer stripped off
+        if ( self.match != None ):
+            self.buffer = self.before + self.match.group() + self.buffer
+        else:
+            self.buffer = self.before + self.buffer
+        #Return the index
+        return index
             
     def expect_list(self, pattern_list, timeout = -1):
         """
@@ -739,6 +766,7 @@ class spawn:
         except EOF:
 	    self.before = incoming
 	    self.after = EOF
+            self.match = None
             if EOF in pattern_list:
                 #self.buffer = ''
                 return pattern_list.index(EOF)
@@ -747,6 +775,7 @@ class spawn:
         except TIMEOUT:
 	    self.before = incoming
 	    self.after = TIMEOUT
+            self.match = None
             if TIMEOUT in pattern_list:
                 #self.buffer = ''
                 return pattern_list.index(TIMEOUT)
