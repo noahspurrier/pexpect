@@ -130,7 +130,7 @@ class spawn:
         self.maxread = 1 # Maximum to read at a time
         ### IMPLEMENT THIS FEATURE!!!
         # anything before maxsearchsize point is preserved, but not searched.
-        #self.maxsearchsize = 1000
+        self.maxsearchsize = 1000
         
         # If command is an int type then it must represent an open file descriptor.
         if type (command) == type(0):
@@ -290,6 +290,14 @@ class spawn:
         in cases where large amounts of output are read back from the child.
         """
         self.maxread = maxread
+
+    def setmaxsearchsize(self,maxsearchsize):
+        """This sets the maximum size to search.  The last maxsearchsize
+        bytes read will be searched for the expect patterns.  All
+        data will be available in the spawn.before variable,
+        but only the last maxsearchsize bytes will be searched."""
+        self.maxsearchsize = maxsearchsize
+        
 
     def read_nonblocking (self, size = 1, timeout = None):
         """
@@ -663,7 +671,11 @@ class spawn:
                     index = index + 1
                     if str_target is EOF or str_target is TIMEOUT: 
                         continue # The Exception patterns are handled differently.
-                    match_index = incoming.find (str_target)
+                    if(self.maxsearchsize != None):
+                        searchbuffer = incoming[-self.maxsearchsize:]
+                    else:
+                        searchbuffer = incoming
+                    match_index = searchbuffer.find (str_target)
                     if match_index >= 0:
                         self.before = incoming [ : match_index]
                         self.after = incoming [match_index : ]
@@ -725,7 +737,11 @@ class spawn:
                     index = index + 1
                     if cre is EOF or cre is TIMEOUT: 
                         continue # The patterns for PexpectExceptions are handled differently.
-                    match = cre.search(incoming)
+                    if(self.maxsearchsize != None):
+                        searchbuffer = incoming[-self.maxsearchsize:]
+                    else:
+                        searchbuffer = incoming
+                        match = cre.search(searchbuffer)
                     if match is not None:
                         self.before = incoming[ : match.start()]
                         self.after = incoming[match.start() : ]
